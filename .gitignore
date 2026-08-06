@@ -1,1 +1,6 @@
-".RData .Rhistory .Rproj.user renv/library/" 
+.RData
+.Rhistory
+.Rproj.user
+renv/library/
+*.html
+
