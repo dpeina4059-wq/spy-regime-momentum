@@ -36,7 +36,7 @@ claims analysis.
 
 Out-of-sample performance held up and improved relative to training: no evidence 
 of overfitting given parameters were not tuned to the training data. Low Sharpe 
-ratios reflect fixed 1-share position sizing rather than percentage returns,git  
+ratios reflect fixed 1-share position sizing rather than percentage returns,  
 proper capital-weighted sizing is a planned next iteration.
 
 ## Walk-Forward Validation
