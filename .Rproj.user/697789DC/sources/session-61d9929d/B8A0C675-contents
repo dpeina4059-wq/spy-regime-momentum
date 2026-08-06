@@ -29,14 +29,14 @@ claims analysis.
 
 ## Results
 
-| Period | Total PnL | Win Rate | Avg PnL/Trade | Sharpe | Trades |
-|--------|-----------|----------|----------------|--------|--------|
-| Train (2010–2020) | $25.88 | 42.9% | $0.74 | 0.09 | 35 |
-| Test (2021–2024) | $135.29 | 63.6% | $12.30 | 0.46 | 11 |
+| Period | Total PnL | Win Rate | Avg PnL/Trade | Sharpe | Max Drawdown | Trades |
+|--------|-----------|----------|----------------|--------|--------------|--------|
+| Train (2010–2020) | $25.88 | 42.9% | $0.74 | 0.09 | -$25.33 | 35 |
+| Test (2021–2024) | $135.29 | 63.6% | $12.30 | 0.46 | -$19.58 | 11 |
 
 Out-of-sample performance held up and improved relative to training: no evidence 
 of overfitting given parameters were not tuned to the training data. Low Sharpe 
-ratios reflect fixed 1-share position sizing rather than percentage returns, 
+ratios reflect fixed 1-share position sizing rather than percentage returns,git  
 proper capital-weighted sizing is a planned next iteration.
 
 ## Structure

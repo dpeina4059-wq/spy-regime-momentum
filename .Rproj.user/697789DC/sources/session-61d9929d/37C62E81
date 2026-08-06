@@ -3,7 +3,7 @@
     "path": "~/spy-regime-momentum/R/SPY Vol Regime Momentum Strategy.Rmd",
     "project_path": "R/SPY Vol Regime Momentum Strategy.Rmd",
     "type": "r_markdown",
-    "hash": "1631788841",
+    "hash": "3859875744",
     "contents": "",
     "dirty": false,
     "created": 1785857583639.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "170,63",
-        "scrollLine": "148",
+        "cursorPosition": "157,33",
+        "scrollLine": "151",
         "last_setup_crc32": "61d9929d2a89f00c"
     },
     "folds": "",
-    "lastKnownWriteTime": 1785861377,
+    "lastKnownWriteTime": 1785975014,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1785861377617,
+    "last_content_update": 1785975014698,
     "read_only": false,
     "read_only_alternatives": []
 }

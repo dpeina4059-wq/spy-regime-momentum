@@ -154,13 +154,17 @@ trades_test  <- run_backtest(test)
 
 summarize_trades <- function(trades, label)
 {
+  cum_pnl      <- cumsum(trades$PnL)
+  running_peak <- cummax(cum_pnl)
+  
   data.frame(
     period = label,
     total_pnl = round(sum(trades$PnL), 2),
     win_rate = round(sum(trades$PnL > 0) / nrow(trades) * 100, 1),
     avg_pnl = round(mean(trades$PnL), 2),
-    n_trades = nrow(trades),
-    sharpe = round(mean(trades$PnL) / sd(trades$PnL), 2)
+    sharpe = round(mean(trades$PnL) / sd(trades$PnL), 2),
+    max_dd = round(min(cum_pnl - running_peak), 2),
+    n_trades = nrow(trades)
   )
 }
 
