@@ -39,6 +39,20 @@ of overfitting given parameters were not tuned to the training data. Low Sharpe
 ratios reflect fixed 1-share position sizing rather than percentage returns,git  
 proper capital-weighted sizing is a planned next iteration.
 
+## Walk-Forward Validation
+
+Rolling walk-forward test across 12 independent 1-year out-of-sample windows (2013–2024) 
+using 3-year training windows revealed the strategy's regime dependency:
+
+- **Profitable years (5/12)**: 2013, 2017, 2021, 2023, 2024
+- **Losing years (7/12)**: 2014, 2015, 2016, 2018, 2019, 2020, 2022
+- **Strongest year**: 2021 — 100% win rate, Sharpe 0.92, +$73.01
+- **Worst year**: 2018 — 0% win rate, Sharpe -1.62, -$14.71
+
+The strategy performs well in trending low-vol bull markets and struggles in choppy 
+or declining regimes where signals whipsaw. This motivates the next iteration: 
+adding an ADX trend strength filter to confirm momentum magnitude before entry.
+
 ## Structure
 
 ```

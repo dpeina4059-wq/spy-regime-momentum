@@ -175,10 +175,45 @@ results <- rbind(
 knitr::kable(results, caption = "Strategy Performance Summary")
 ```
 
+## Walk-Forward Validation
+To assess strategy viability across different market regimes, a rolling 
+walk-forward test was conducted using 3-year training windows and 1-year 
+test windows from 2013 to 2024.
+
+```{r walk-forward}
+
+wf_results <- data.frame()
+
+for (test_year in 2013:2024) { 
+  train_start <- as.Date(paste0(test_year - 3, "-01-01"))  
+  train_end   <- as.Date(paste0(test_year, "-01-01")) - 1  
+  test_start  <- as.Date(paste0(test_year, "-01-01")) 
+  test_end    <- as.Date(paste0(test_year + 1, "-01-01"))
+  
+  train_data    <- filter(dates, date >= train_start & date < test_start)
+  test_data     <- filter(dates, date >= test_start & date < test_end)
+  train_results <- run_backtest(train_data)
+  test_results  <- run_backtest(test_data)
+  
+  wf_results <- rbind(wf_results, summarize_trades(test_results, as.character(test_year)))
+}
+
+knitr::kable(wf_results, caption = "Walk-Forward Test Results by Year")
+
+```
+
+The strategy performs well in trending low-vol environments (2013, 2021, 2023, 2024) 
+but struggles in choppy or declining markets (2015-2016, 2018-2020) where regime 
+signals whipsaw frequently. This motivates the addition of an ADX trend strength 
+filter as a next iteration.
+
+
+
 ## Limitations & Next Steps
 
-- sample size remains thin: future work will implement walk-forward testing across rolling windows.
-- Position sizing is fixed at 1 share: next iteration will implement Kelly Criterion based sizing
+- Position sizing is fixed at 1 share: next iterations will implement Kelly Criterion based sizing
 - Strategy is Long-only: short signals via momentum reversal to be explored
 - Currently limited to SPY: generalization to sector ETFs and individual equities planned.
+- Walk-forward testing reveals whipsaw weakness in choppy markets
+- ADX trend strength filter planned as next iteration
 
