@@ -37,6 +37,12 @@ spy_prices <- data.frame(
   )
 
 spy_prices$adx <- as.numeric(adx_data[, "ADX"])
+
+rolling_mean <- SMA(spy_prices$SPY.Adjusted, n = 20)
+rolling_std  <- runSD(spy_prices$SPY.Adjusted, n = 20)
+zscore       <- (spy_prices$SPY.Adjusted - rolling_mean) / rolling_std
+
+spy_prices$zscore <- as.numeric(zscore)
 ```
 
 ### Rolling Volatility & Regime Classification
@@ -101,6 +107,7 @@ This asymmetric structure of a strict entry and a loose exit is designed to prot
 ### Backtesting Function
 
 ```{r backtest-function}
+
 run_backtest <- function(data) {
   trades <- data.frame(
     entry_date = as.Date(character()),
@@ -109,19 +116,29 @@ run_backtest <- function(data) {
     entry_price       = as.numeric(),
     exit_price        = as.numeric(),
     position_size     = as.numeric(),
-    transaction_costs = as.numeric()
+    transaction_costs = as.numeric(),
+    leg = as.character()
   )
   
   in_position <- FALSE
   entry_date  <- NULL
   entry_price <- NULL
+  current_leg <- NULL
   
   for (i in 1:nrow(data)) {
     if (!in_position & data$regime[i] == "low" & data$ema_fast[i] > data$ema_slow[i]) {
       entry_date  <- data$date[i]
       entry_price <- data$SPY.Adjusted[i]
       in_position <- TRUE
-    } else if (in_position & (data$regime[i] == "high" | data$ema_fast[i]< data$ema_slow[i])) {
+      current_leg <- "momentum"
+    } else if (!in_position & data$regime[i] == "neutral" & data$zscore[i] < -2){
+      entry_date  <- data$date[i]
+      entry_price <- data$SPY.Adjusted[i]
+      in_position <- TRUE
+      current_leg <- "mean_reversion"
+    }
+    else if (isTRUE(in_position) & isTRUE(current_leg == "momentum" & data$ema_fast[i] < data$ema_slow[i]) |
+         isTRUE(in_position) & isTRUE(current_leg == "mean_reversion" & data$zscore[i] > 0)){
       trades <- rbind(trades, data.frame(
         entry_date = entry_date,
         exit_date = data$date[i],
@@ -129,12 +146,14 @@ run_backtest <- function(data) {
         entry_price = entry_price,
         exit_price = data$SPY.Adjusted[i],
         position_size = 1,
-        transaction_costs = 0.001
+        transaction_costs = 0.001,
+        leg = current_leg
         
       ))
       in_position <- FALSE
       entry_date  <- NULL
       entry_price <- NULL
+      current_leg <- NULL
     }
   }
   
@@ -149,7 +168,6 @@ run_backtest <- function(data) {
 ```{r results}
 dates <- inner_join(spy_prices, roll_vol_df, by = "date") |>
   inner_join(regime_df_clean, by = "date")
-
 
 train <- filter(dates, date < as.Date("2021-01-01"))
 test <- filter(dates, date >= as.Date("2021-01-01"))
@@ -181,9 +199,11 @@ knitr::kable(results, caption = "Strategy Performance Summary")
 ```
 
 ## Walk-Forward Validation
-To assess strategy viability across different market regimes, a rolling 
-walk-forward test was conducted using 3-year training windows and 1-year 
-test windows from 2013 to 2024.
+The two-leg framework (momentum + mean reversion) improved walk-forward 
+performance from 5/12 to 7/12 profitable years relative to the single-leg 
+momentum strategy. Previously losing years 2019 and 2022 turned profitable 
+under the expanded framework. Remaining losing years share a common characteristic 
+of prolonged choppy/transitional markets where neither signal fires cleanly.
 
 ```{r walk-forward}
 
@@ -214,10 +234,23 @@ filter as a next iteration.
 
 ## Limitations & Next Steps
 
-- **Whipsaw weakness**: strategy under-performs in choppy/transitional markets; 
-  regime-dependent strategy switching planned as next iteration
-- **Position sizing**: fixed 1-share sizing understates real returns; 
-  Kelly Criterion sizing to be implemented
-- **Long-only**: short signals via momentum reversal to be explored
-- **Single asset**: generalization to sector ETF's and pairs trading planned
+- **Remaining whipsaw weakness** — 5/12 walk-forward windows still unprofitable, 
+  concentrated in prolonged choppy markets (2014-2016, 2018, 2020) where neither 
+  momentum nor mean reversion signals fire cleanly. Regime-dependent position 
+  sizing is the planned next iteration.
 
+- **Position sizing** — fixed 1-share sizing significantly understates real 
+  returns and distorts Sharpe/drawdown metrics. Kelly Criterion based sizing 
+  to be implemented in the next version.
+
+- **High vol leg** — strategy currently goes flat in high vol regimes. In live 
+  trading this would be replaced by bear put spreads to generate returns during 
+  market dislocations. A dedicated options backtester is planned as future 
+  infrastructure to simulate this leg properly.
+
+- **Single asset** — currently limited to SPY. Generalization to sector ETFs 
+  and pairs trading planned as the strategy matures.
+
+- **Walk-forward sample size** — 1-year test windows produce thin trade counts 
+  in some years (1-3 trades) making statistical inference difficult. Longer 
+  test windows or multi-asset expansion would strengthen validation.

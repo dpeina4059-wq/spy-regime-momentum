@@ -1,63 +1,59 @@
 # SPY Vol Regime + Momentum Strategy
 
-A systematic long-only trading strategy on SPY combining two uncorrelated signals: 
-a rolling volatility regime classifier and an EMA momentum filter. Built in R and 
-validated with a train/test split across 15 years of market data (2010–2024).
+A systematic long-only trading strategy on SPY combining a rolling volatility 
+regime classifier, EMA momentum filter, and mean reversion signal. Built in R 
+and validated with a train/test split and rolling walk-forward test across 15 
+years of market data (2010–2024).
 
 ## Motivation
 
 Developed as part of a personal quant finance research project to apply mathematical 
 and statistical foundations from an actuarial science background to live market 
-strategy development. The vol regime classifier architecture was directly inspired by 
-dynamic threshold monitoring work completed during an actuarial internship at Chubb 
-Insurance, where sliding time-window percentile thresholds were used for seasonal 
-claims analysis.
+strategy development. The vol regime classifier architecture was directly inspired 
+by dynamic threshold monitoring work completed during an actuarial internship at 
+Chubb Insurance, where sliding time-window percentile thresholds were used for 
+seasonal claims analysis.
 
 ## Strategy Logic
 
-| Signal | Condition | Role |
-|--------|-----------|------|
-| Vol Regime | Rolling 10-day annualized vol < 25th percentile (252-day window) | Entry filter |
-| Momentum | EMA(10) > EMA(30) | Entry filter |
-| Vol Regime | Rolling vol > 75th percentile | Exit trigger |
-| Momentum | EMA(10) < EMA(30) | Exit trigger |
+The strategy deploys different logic depending on the current vol regime:
 
-**Entry**: Both signals must confirm (AND logic) — strict entry  
-**Exit**: Either signal is sufficient (OR logic) — loose exit
+| Regime | Strategy | Entry Signal | Exit Signal |
+|--------|----------|--------------|-------------|
+| Low vol | Momentum | EMA(10) > EMA(30) | EMA(10) < EMA(30) |
+| Neutral | Mean Reversion | Z-score < -2 (price unusually low) | Z-score > 0 (reversion complete) |
+| High vol | Flat | No trades | Cash — put spreads in live trading |
 
-## Results
+**Entry**: Strict conditions per regime — only enter when signal confirms  
+**Exit**: Regime-specific exit logic — each leg has its own exit condition
 
 ## Results
 
 | Period | Total PnL | Win Rate | Avg PnL/Trade | Sharpe | Max Drawdown | Trades |
 |--------|-----------|----------|----------------|--------|--------------|--------|
-| Train (2010–2020) | $25.88 | 42.9% | $0.74 | 0.09 | -$25.33 | 35 |
-| Test (2021–2024) | $135.29 | 63.6% | $12.30 | 0.46 | -$19.58 | 11 |
+| Train (2010–2020) | $52.15 | 56.1% | $1.27 | 0.18 | -$30.11 | 41 |
+| Test (2021–2024) | $204.45 | 81.2% | $12.78 | 0.62 | -$19.58 | 16 |
 
-Out-of-sample performance held up and improved relative to training: no evidence 
-of overfitting given parameters were not tuned to the training data. Low Sharpe 
-ratios reflect fixed 1-share position sizing rather than percentage returns,  
-proper capital-weighted sizing is a planned next iteration.
+Out-of-sample performance significantly improved relative to training across every 
+metric, no evidence of overfitting given parameters were not tuned to training data.
 
 ## Walk-Forward Validation
 
-Rolling walk-forward test across 12 independent 1-year out-of-sample windows (2013–2024) 
-using 3-year training windows revealed clear regime dependency:
+Rolling walk-forward test across 12 independent 1-year out-of-sample windows 
+(2013–2024) using 3-year training windows:
 
-- **Profitable years (5/12)**: 2017, 2021, 2023, 2024, and one marginal year
-- **Losing years (7/12)**: 2014, 2015, 2016, 2018, 2019, 2020, 2022
-- **Strongest year**: 2021 — 100% win rate, Sharpe 0.92, +$73.01
+- **Profitable years (7/12)**: 2013, 2017, 2019, 2021, 2022, 2023, 2024
+- **Losing years (5/12)**: 2014, 2015, 2016, 2018, 2020
+- **Strongest year**: 2024 — 100% win rate, Sharpe 1.30, +$57.37
 - **Worst year**: 2018 — 0% win rate, Sharpe -1.62, -$14.71
 
-The strategy performs well in persistent low-vol trending markets and struggles 
-in choppy or transitional regimes where vol signals whipsaw. An ADX trend strength 
-filter was tested as a remediation but produced insufficient improvement — 
-reducing profitable years to 4/12 while introducing zero-trade years in 3 windows.
+Significant improvement over the single-leg momentum strategy (5/12 profitable) 
+achieved by adding a mean reversion leg for neutral vol regimes. Previously losing 
+years like 2019 and 2022 turned profitable under the two-leg framework.
 
-The root cause identified: entry signals fire correctly on low vol + upward momentum 
-but the market frequently reverses immediately after entry in choppy regimes. 
-Next iteration will explore regime-dependent strategy switching rather than 
-additional entry filters on a single strategy.
+Remaining losing years (2014, 2015, 2016, 2018, 2020) share a common characteristic: 
+prolonged choppy markets where neither momentum nor mean reversion signals fire 
+cleanly. Further iteration planned.
 
 ## Structure
 
@@ -77,14 +73,18 @@ spy-regime-momentum/
 renv::restore()
 ```
 
-Then knit `R/SPY-Vol-Regime-Momentum-Strategy.Rmd` to reproduce all results and visualizations.
+Then knit `R/SPY-Vol-Regime-Momentum-Strategy.Rmd` to reproduce all results 
+and visualizations.
 
 ## Limitations & Next Steps
 
-- Sample size thin: walk-forward testing across rolling windows planned
-- Fixed 1-share position sizing: Kelly Criterion sizing to be implemented
-- Long-only: short signals via momentum reversal to be explored
-- SPY only: generalization to sector ETFs and pairs trading planned
+- **Remaining whipsaw weakness**: 5/12 losing years still driven by choppy 
+  markets where neither leg fires cleanly; regime-dependent position sizing planned
+- **Position sizing**: fixed 1-share sizing understates real returns; 
+  Kelly Criterion sizing to be implemented  
+- **High vol leg**: currently flat; live trading would deploy bear put spreads 
+  during high vol regimes; options backtester planned as future infrastructure
+- **Single asset**: generalization to sector ETFs and pairs trading planned
 
 ## Tech Stack
 
