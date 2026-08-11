@@ -42,16 +42,22 @@ proper capital-weighted sizing is a planned next iteration.
 ## Walk-Forward Validation
 
 Rolling walk-forward test across 12 independent 1-year out-of-sample windows (2013–2024) 
-using 3-year training windows revealed the strategy's regime dependency:
+using 3-year training windows revealed clear regime dependency:
 
-- **Profitable years (5/12)**: 2013, 2017, 2021, 2023, 2024
+- **Profitable years (5/12)**: 2017, 2021, 2023, 2024, and one marginal year
 - **Losing years (7/12)**: 2014, 2015, 2016, 2018, 2019, 2020, 2022
 - **Strongest year**: 2021 — 100% win rate, Sharpe 0.92, +$73.01
 - **Worst year**: 2018 — 0% win rate, Sharpe -1.62, -$14.71
 
-The strategy performs well in trending low-vol bull markets and struggles in choppy 
-or declining regimes where signals whipsaw. This motivates the next iteration: 
-adding an ADX trend strength filter to confirm momentum magnitude before entry.
+The strategy performs well in persistent low-vol trending markets and struggles 
+in choppy or transitional regimes where vol signals whipsaw. An ADX trend strength 
+filter was tested as a remediation but produced insufficient improvement — 
+reducing profitable years to 4/12 while introducing zero-trade years in 3 windows.
+
+The root cause identified: entry signals fire correctly on low vol + upward momentum 
+but the market frequently reverses immediately after entry in choppy regimes. 
+Next iteration will explore regime-dependent strategy switching rather than 
+additional entry filters on a single strategy.
 
 ## Structure
 

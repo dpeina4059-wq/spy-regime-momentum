@@ -25,14 +25,18 @@ getSymbols("SPY", from = "2010-01-01", to = "2024-12-31")
 ### Price Data & Momentum Signals
 
 ```{r spy-prices}
+adx_data <- ADX(HLC(SPY), n = 14)
+
 spy_prices <- data.frame(
   date = index(SPY),
   SPY.Adjusted = coredata(Ad(SPY))
 ) |>
   mutate(
-    ema_fast = EMA(SPY.Adjusted, n=10),
-    ema_slow = EMA(SPY.Adjusted, n=30)
+    ema_fast = EMA(SPY.Adjusted, n = 10),
+    ema_slow = EMA(SPY.Adjusted, n = 30)
   )
+
+spy_prices$adx <- as.numeric(adx_data[, "ADX"])
 ```
 
 ### Rolling Volatility & Regime Classification
@@ -63,7 +67,7 @@ regime_df_clean <- regime_df[!is.na(regime_df$regime), ]
 
 ## Visualization
 
-## Vol Regime Chart
+### Vol Regime Chart
 
 ```{r regime-plot, fig.width=10, fig.height=5}
 regime_rle <- rle(regime_df_clean$regime)
@@ -82,9 +86,9 @@ ggplot(roll_vol_df) +
                 ymin = -Inf, ymax = Inf, fill = regime), alpha = 0.3) + geom_line(aes(x = date, y = roll_vol)) + labs(title = "SPY Rolling Annualized Volatility with Regime Classification",x = "Date", y = "Annualized Vol") + theme_minimal()
 ```
 
-## STRATEGY
+## Strategy
 
-## Entry & Exit Rules
+### Entry & Exit Rules
 
 The strategy uses two conditions for entry and a looser OR condition for exit:
 
@@ -146,6 +150,7 @@ run_backtest <- function(data) {
 dates <- inner_join(spy_prices, roll_vol_df, by = "date") |>
   inner_join(regime_df_clean, by = "date")
 
+
 train <- filter(dates, date < as.Date("2021-01-01"))
 test <- filter(dates, date >= as.Date("2021-01-01"))
 
@@ -202,18 +207,17 @@ knitr::kable(wf_results, caption = "Walk-Forward Test Results by Year")
 
 ```
 
-The strategy performs well in trending low-vol environments (2013, 2021, 2023, 2024) 
+The strategy performs well in trending low-vol environments (2017, 2021, 2023, 2024) 
 but struggles in choppy or declining markets (2015-2016, 2018-2020) where regime 
 signals whipsaw frequently. This motivates the addition of an ADX trend strength 
 filter as a next iteration.
 
-
-
 ## Limitations & Next Steps
 
-- Position sizing is fixed at 1 share: next iterations will implement Kelly Criterion based sizing
-- Strategy is Long-only: short signals via momentum reversal to be explored
-- Currently limited to SPY: generalization to sector ETFs and individual equities planned.
-- Walk-forward testing reveals whipsaw weakness in choppy markets
-- ADX trend strength filter planned as next iteration
+- **Whipsaw weakness**: strategy under-performs in choppy/transitional markets; 
+  regime-dependent strategy switching planned as next iteration
+- **Position sizing**: fixed 1-share sizing understates real returns; 
+  Kelly Criterion sizing to be implemented
+- **Long-only**: short signals via momentum reversal to be explored
+- **Single asset**: generalization to sector ETF's and pairs trading planned
 
