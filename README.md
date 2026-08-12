@@ -3,7 +3,7 @@
 A systematic long-only trading strategy on SPY combining a rolling volatility 
 regime classifier, EMA momentum filter, and mean reversion signal. Built in R 
 and validated with a train/test split and rolling walk-forward test across 15 
-years of market data (2010–2024).
+years of market data (2010–2024). Position sizing via Kelly Criterion.
 
 ## Motivation
 
@@ -25,35 +25,34 @@ The strategy deploys different logic depending on the current vol regime:
 | High vol | Flat | No trades | Cash — put spreads in live trading |
 
 **Entry**: Strict conditions per regime — only enter when signal confirms  
-**Exit**: Regime-specific exit logic — each leg has its own exit condition
+**Exit**: Regime-specific exit logic — each leg has its own exit condition  
+**Position Sizing**: Quarter Kelly Criterion calibrated on rolling training window
 
 ## Results
 
-| Period | Total PnL | Win Rate | Avg PnL/Trade | Sharpe | Max Drawdown | Trades |
-|--------|-----------|----------|----------------|--------|--------------|--------|
-| Train (2010–2020) | $52.15 | 56.1% | $1.27 | 0.18 | -$30.11 | 41 |
-| Test (2021–2024) | $204.45 | 81.2% | $12.78 | 0.62 | -$19.58 | 16 |
+| Period | Total PnL | Win Rate | Avg PnL/Trade | Sharpe | Max Drawdown | Kelly F | Trades |
+|--------|-----------|----------|----------------|--------|--------------|---------|--------|
+| Train (2010–2020) | $498.85 | 56.1% | $12.17 | 0.26 | -$208.21 | 0.286 | 41 |
+| Test (2021–2024) | $204.45 | 81.2% | $12.78 | 0.62 | -$19.57 | 0.719 | 16 |
 
-Out-of-sample performance significantly improved relative to training across every 
-metric, no evidence of overfitting given parameters were not tuned to training data.
+Simulated on $5k account with quarter Kelly position sizing. Out-of-sample 
+win rate (81.2%) significantly exceeded training (56.1%) with no parameter 
+tuning — no evidence of overfitting.
 
 ## Walk-Forward Validation
 
 Rolling walk-forward test across 12 independent 1-year out-of-sample windows 
-(2013–2024) using 3-year training windows:
+(2013–2024) using 3-year training windows with Kelly fraction passed forward 
+from each training window to size the corresponding test window:
 
 - **Profitable years (7/12)**: 2013, 2017, 2019, 2021, 2022, 2023, 2024
 - **Losing years (5/12)**: 2014, 2015, 2016, 2018, 2020
-- **Strongest year**: 2024 — 100% win rate, Sharpe 1.30, +$57.37
-- **Worst year**: 2018 — 0% win rate, Sharpe -1.62, -$14.71
+- **Strongest year**: 2013 — $54.48 with Kelly sizing, Sharpe 0.44
+- **Worst year**: 2014 — -$34.09, driven by choppy false momentum signals
 
-Significant improvement over the single-leg momentum strategy (5/12 profitable) 
-achieved by adding a mean reversion leg for neutral vol regimes. Previously losing 
-years like 2019 and 2022 turned profitable under the two-leg framework.
-
-Remaining losing years (2014, 2015, 2016, 2018, 2020) share a common characteristic: 
-prolonged choppy markets where neither momentum nor mean reversion signals fire 
-cleanly. Further iteration planned.
+Kelly sizing amplifies both wins and losses — 2013 improved from $8.74 to 
+$54.48 while 2014 worsened from -$8.53 to -$34.09. This is expected behavior 
+and reflects the strategy's genuine edge profile rather than a flaw.
 
 ## Structure
 
@@ -78,13 +77,14 @@ and visualizations.
 
 ## Limitations & Next Steps
 
-- **Remaining whipsaw weakness**: 5/12 losing years still driven by choppy 
-  markets where neither leg fires cleanly; regime-dependent position sizing planned
-- **Position sizing**: fixed 1-share sizing understates real returns; 
-  Kelly Criterion sizing to be implemented  
-- **High vol leg**: currently flat; live trading would deploy bear put spreads 
-  during high vol regimes; options backtester planned as future infrastructure
-- **Single asset**: generalization to sector ETFs and pairs trading planned
+- **Remaining whipsaw weakness** — 5/12 losing years concentrated in choppy 
+  markets (2014-2016, 2018, 2020) where neither leg fires cleanly; 
+  regime-dependent position sizing and signal filters planned
+- **High vol leg** — currently flat; live trading would deploy bear put spreads; 
+  options backtester planned as future infrastructure  
+- **Capital constraint** — Kelly expression limited at small account sizes; 
+  full benefits require $5k+ account or cheaper underlying assets
+- **Single asset** — generalization to sector ETFs and pairs trading planned
 
 ## Tech Stack
 
